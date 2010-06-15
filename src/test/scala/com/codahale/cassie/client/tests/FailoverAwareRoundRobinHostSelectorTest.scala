@@ -4,6 +4,7 @@ import org.scalatest.matchers.MustMatchers
 import org.scalatest.mock.MockitoSugar
 import com.codahale.cassie.client.ClusterMap
 import com.codahale.cassie.client.FailoverAwareRoundRobinHostSelector
+import com.codahale.cassie.client.NoLiveHostsException
 import org.mockito.Mockito.when
 import java.net.InetSocketAddress
 import com.codahale.logula.Log
@@ -48,6 +49,18 @@ class FailoverAwareRoundRobinHostSelectorTest extends Spec
     it("correctly returns the failure status of nodes in the cluster") {
       selector.isFailed(cassandra1) must equal(true)
       selector.isFailed(cassandra2) must equal(false)
+    }
+  }
+
+  describe("when all nodes are failed") {
+    var selector = new FailoverAwareRoundRobinHostSelector(clusterMap)
+    selector.failed(cassandra1)
+    selector.failed(cassandra2)
+
+    it("raises NoLiveHostsException") {
+      evaluating {
+        selector.next
+      } must produce[NoLiveHostsException]
     }
   }
 
